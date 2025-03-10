@@ -1,0 +1,135 @@
+<div class="news-dashboard" [attr.data-theme]="currentTheme">
+    <!-- Temporarily disabled loader for performance
+    <app-loader [isLoading]="loading" [message]="loadingMessage"></app-loader>
+    -->
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-top">
+            <h1>News Aggregator</h1>
+            <button class="theme-toggle" (click)="toggleTheme()">
+                {{ currentTheme === 'light' ? '🌙' : '☀️' }}
+            </button>
+        </div>
+        <div class="filters">
+            <!-- Debug info -->
+            <div *ngIf="topics.length === 0" class="debug-info">
+                No topics loaded
+            </div>
+            <div *ngIf="topics.length > 0" class="debug-info">
+                Topics loaded: {{topics.length}}
+            </div>
+
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    placeholder="Search articles..."
+                    [ngModel]="filters.searchQuery"
+                    (ngModelChange)="onSearch($event)"
+                    class="search-input">
+            </div>
+
+            <select [(ngModel)]="filters.topic" (change)="applyFilters()" class="filter-select">
+                <option value="all">All Topics</option>
+                <option *ngFor="let topic of topics" [value]="topic">
+                    {{topic | titlecase}}
+                </option>
+            </select>
+
+            <div class="date-range">
+                <input 
+                    type="date" 
+                    [(ngModel)]="filters.dateRange!.start"
+                    (change)="applyFilters()"
+                    class="date-input">
+                <span>to</span>
+                <input 
+                    type="date" 
+                    [(ngModel)]="filters.dateRange!.end"
+                    (change)="applyFilters()"
+                    class="date-input">
+            </div>
+
+            <div class="sentiment-filter">
+                <span>Sentiment:</span>
+                <input type="range" 
+                       [(ngModel)]="filters.sentimentRange!.min" 
+                       (change)="applyFilters()"
+                       min="-1" max="1" step="0.1">
+                <input type="range" 
+                       [(ngModel)]="filters.sentimentRange!.max" 
+                       (change)="applyFilters()"
+                       min="-1" max="1" step="0.1">
+            </div>
+        </div>
+    </header>
+
+    <!-- Simple Loading Indicator -->
+    <div *ngIf="loading" class="simple-loading">
+        Loading...
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error" class="error">
+        {{error}}
+    </div>
+
+    <!-- Results Summary -->
+    <div class="results-summary" *ngIf="!loading && !error && filteredArticles.length > 0">
+        <p>Showing top {{ displayedArticles.length }} of {{ filteredArticles.length }} articles</p>
+    </div>
+
+    <!-- News Grid -->
+    <div class="news-grid" *ngIf="!loading && !error">
+        <article *ngFor="let article of displayedArticles" class="news-card">
+            <div class="card-header">
+                <span class="topic-badge" [style.background-color]="article.topic === 'politics' ? '#FF4081' : 
+                                                                   article.topic === 'sports' ? '#2196F3' : 
+                                                                   article.topic === 'agriculture' ? '#4CAF50' : 
+                                                                   '#9C27B0'">
+                    {{article.topic | titlecase}}
+                </span>
+                <span class="source">{{article.source}}</span>
+            </div>
+            
+            <div class="card-content">
+                <div class="image-container" *ngIf="article.imageUrl">
+                    <img [src]="article.imageUrl" [alt]="article.title" class="article-image">
+                </div>
+                
+                <h2>{{article.title}}</h2>
+                <p class="summary">{{article.summary}}</p>
+                
+                <div class="sentiment" [style.color]="getSentimentColor(article.sentimentScore)">
+                    Sentiment: {{article.sentimentScore.toFixed(2)}}
+                </div>
+                
+                <div class="key-entities">
+                    <span *ngFor="let entity of article.keyEntities" class="entity-chip">
+                        {{entity}}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="card-footer">
+                <div class="action-buttons">
+                    <button 
+                        class="action-btn bookmark-btn" 
+                        [class.bookmarked]="isBookmarked(article.id!)"
+                        (click)="toggleBookmark(article)">
+                        {{ isBookmarked(article.id!) ? '★' : '☆' }}
+                    </button>
+                    <button 
+                        class="action-btn share-btn"
+                        (click)="shareArticle(article)">
+                        🔗
+                    </button>
+                    <a [href]="article.url" target="_blank" class="read-more">Read Full Article</a>
+                </div>
+                <span class="date" *ngIf="article.publishedDate">
+                    {{article.publishedDate | date}}
+                </span>
+            </div>
+        </article>
+    </div>
+</div> 
